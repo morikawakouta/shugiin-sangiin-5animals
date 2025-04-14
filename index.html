@@ -1,64 +1,85 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>衆議院議員リスト</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>衆議院・参議院 5アニマル一覧</title>
+
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+
   <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
     table {
-      border-collapse: collapse;
       width: 100%;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #f2f2f2;
     }
   </style>
 </head>
 <body>
-  <h1>衆議院議員リスト</h1>
-  <div id="table-container">読み込み中...</div>
+
+  <h1>衆議院議員（5アニマル一覧）</h1>
+
+  <table id="myTable" class="display">
+    <thead>
+      <tr>
+        <th>氏名</th>
+        <th>政党</th>
+        <th>生年月日</th>
+        <th>表面</th>
+        <th>本質</th>
+        <th>意思決定</th>
+        <th>隠れ</th>
+        <th>希望</th>
+      </tr>
+    </thead>
+    <tbody id="table-body">
+      <!-- JavaScriptがここに行を追加 -->
+    </tbody>
+  </table>
+
+  <!-- jQuery + DataTables JS -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
   <script>
-    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1giM0QVguQyfZuo0KA4cJX2xV2QyFjBHNNRgFbX7DdsPqh4ADmRcEM6BaZHgmhk08JG5UeByIloJo/pub?output=csv&gid=0";
+    // 衆議院のCSV公開URL（CSV形式！）
+    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1giM0QVguQyfZuo0KA4cJX2xV2QyFjBHNNRgFbX7DdsPqh4ADmRcEM6BaZHgmhk08JG5UeByIloJo/pub?gid=0&single=true&output=csv";
 
-    fetch(sheetURL)
-      .then(response => response.text())
-      .then(csvText => {
-        const rows = csvText.trim().split("\n").map(row => row.split(","));
-        const header = rows[0];
-        const data = rows.slice(1);
+    fetch(csvUrl)
+      .then(res => res.text())
+      .then(csv => {
+        const rows = csv.split("\n").slice(1); // 1行目はヘッダー
+        const tbody = document.getElementById("table-body");
 
-        const table = document.createElement("table");
-        const thead = table.createTHead();
-        const headerRow = thead.insertRow();
-        header.forEach(col => {
-          const th = document.createElement("th");
-          th.textContent = col;
-          headerRow.appendChild(th);
+        rows.forEach(row => {
+          const cols = row.split(",");
+          if (cols.length >= 8) {
+            const tr = document.createElement("tr");
+            cols.slice(0, 8).forEach(col => {
+              const td = document.createElement("td");
+              td.textContent = col.replace(/"/g, '');
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          }
         });
 
-        const tbody = table.createTBody();
-        data.forEach(row => {
-          const tr = tbody.insertRow();
-          row.forEach(cell => {
-            const td = tr.insertCell();
-            td.textContent = cell;
-          });
+        // 表をDataTablesで初期化
+        $('#myTable').DataTable({
+          pageLength: 25,
+          order: [],
+          language: {
+            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/ja.json"
+          }
         });
-
-        const container = document.getElementById("table-container");
-        container.innerHTML = "";  // 「読み込み中...」を消す
-        container.appendChild(table);
-      })
-      .catch(error => {
-        document.getElementById("table-container").innerText = "データの取得に失敗しました。";
-        console.error(error);
       });
   </script>
+
 </body>
 </html>
