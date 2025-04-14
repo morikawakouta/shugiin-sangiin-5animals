@@ -2,22 +2,20 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>議員リスト（フィルター付き）</title>
-  <!-- DataTables CSS -->
+  <title>議員リスト（SearchPanes付き）</title>
+
+  <!-- DataTables & SearchPanes CSS -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/searchpanes/2.2.0/css/searchPanes.dataTables.min.css" />
+
   <style>
-    .filters {
-      margin-bottom: 10px;
-    }
-    .filters label {
-      margin-right: 20px;
+    .dt-searchPanes {
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
   <h1>議員リスト</h1>
-
-  <div class="filters" id="filter-area"></div>
 
   <table id="gijiin-table" class="display" style="width:100%">
     <thead>
@@ -29,47 +27,40 @@
   <!-- jQuery & DataTables JS -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/searchpanes/2.2.0/js/dataTables.searchPanes.min.js"></script>
+  <script src="https://cdn.datatables.net/select/1.7.0/js/dataTables.select.min.js"></script>
 
   <script>
     const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1giM0QVguQyfZuo0KA4cJX2xV2QyFjBHNNRgFbX7DdsPqh4ADmRcEM6BaZHgmhk08JG5UeByIloJo/pub?gid=0&single=true&output=csv";
 
-    // CSVを読み込んでDataTableに変換
     async function loadCSVtoTable() {
       const res = await fetch(SHEET_URL);
       const text = await res.text();
       const rows = text.trim().split("\n").map(row => row.split(","));
-
       const headers = rows[0];
       const data = rows.slice(1);
 
-      // ヘッダーを反映
       const thead = $("#gijiin-table thead tr");
       headers.forEach(h => thead.append(`<th>${h}</th>`));
 
-      // DataTable 初期化
-      const table = $('#gijiin-table').DataTable({
+      $('#gijiin-table').DataTable({
         data: data,
         columns: headers.map(h => ({ title: h })),
-        paging: false, // ✅ 全件表示（ページネーションなし）
-        dom: 'lrtip',  // ✅ デフォルトの検索フォーム削除
-        initComplete: function () {
-          // フィルター作成（上部）
-          headers.forEach((title, i) => {
-            const column = this.api().column(i);
-            const select = $(`<label>${title}: <select><option value="">すべて</option></select></label>`).appendTo("#filter-area");
-
-            column.data().unique().sort().each(function (d) {
-              if (d && d !== "-") {
-                select.find("select").append(`<option value="${d}">${d}</option>`);
-              }
-            });
-
-            select.find("select").on("change", function () {
-              const val = $.fn.dataTable.util.escapeRegex($(this).val());
-              column.search(val ? '^' + val + '$' : '', true, false).draw();
-            });
-          });
-        }
+        paging: false,
+        dom: 'Plfrtip',  // ✅ SearchPanesを含めたUI構成
+        searchPanes: {
+          cascadePanes: true,
+          dtOpts: {
+            paging: false,
+            searching: false
+          }
+        },
+        columnDefs: headers.map((_, index) => ({
+          searchPanes: {
+            show: true
+          },
+          targets: index
+        }))
       });
     }
 
