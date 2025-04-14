@@ -1,85 +1,109 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>衆議院・参議院 5アニマル一覧</title>
+  <meta charset="UTF-8">
+  <title>衆議院 5アニマル</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- DataTables CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
   <style>
     body {
       font-family: sans-serif;
       padding: 20px;
     }
-    h1 {
-      margin-bottom: 20px;
-    }
     table {
+      width: 100%;
+    }
+    tfoot select {
       width: 100%;
     }
   </style>
 </head>
 <body>
 
-  <h1>衆議院議員（5アニマル一覧）</h1>
+<h1>衆議院 5アニマル議員一覧</h1>
 
-  <table id="myTable" class="display">
-    <thead>
-      <tr>
-        <th>氏名</th>
-        <th>政党</th>
-        <th>生年月日</th>
-        <th>表面</th>
-        <th>本質</th>
-        <th>意思決定</th>
-        <th>隠れ</th>
-        <th>希望</th>
-      </tr>
-    </thead>
-    <tbody id="table-body">
-      <!-- JavaScriptがここに行を追加 -->
-    </tbody>
-  </table>
+<table id="myTable" class="display">
+  <thead>
+    <tr>
+      <th>氏名</th>
+      <th>政党</th>
+      <th>生年月日</th>
+      <th>表面</th>
+      <th>本質</th>
+      <th>意思決定</th>
+      <th>隠れ</th>
+      <th>希望</th>
+    </tr>
+  </thead>
+  <tfoot>
+    <tr>
+      <th>氏名</th>
+      <th>政党</th>
+      <th>生年月日</th>
+      <th>表面</th>
+      <th>本質</th>
+      <th>意思決定</th>
+      <th>隠れ</th>
+      <th>希望</th>
+    </tr>
+  </tfoot>
+  <tbody id="table-body"></tbody>
+</table>
 
-  <!-- jQuery + DataTables JS -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<!-- jQuery + DataTables -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
-  <script>
-    // 衆議院のCSV公開URL（CSV形式！）
-    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1giM0QVguQyfZuo0KA4cJX2xV2QyFjBHNNRgFbX7DdsPqh4ADmRcEM6BaZHgmhk08JG5UeByIloJo/pub?gid=0&single=true&output=csv";
+<script>
+const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1giM0QVguQyfZuo0KA4cJX2xV2QyFjBHNNRgFbX7DdsPqh4ADmRcEM6BaZHgmhk08JG5UeByIloJo/pub?gid=0&single=true&output=csv";
 
-    fetch(csvUrl)
-      .then(res => res.text())
-      .then(csv => {
-        const rows = csv.split("\n").slice(1); // 1行目はヘッダー
-        const tbody = document.getElementById("table-body");
+fetch(csvUrl)
+  .then(res => res.text())
+  .then(csv => {
+    const rows = csv.split("\n").slice(1);
+    const tbody = document.getElementById("table-body");
 
-        rows.forEach(row => {
-          const cols = row.split(",");
-          if (cols.length >= 8) {
-            const tr = document.createElement("tr");
-            cols.slice(0, 8).forEach(col => {
-              const td = document.createElement("td");
-              td.textContent = col.replace(/"/g, '');
-              tr.appendChild(td);
+    rows.forEach(row => {
+      const cols = row.split(",");
+      if (cols.length >= 8) {
+        const tr = document.createElement("tr");
+        cols.slice(0, 8).forEach(col => {
+          const td = document.createElement("td");
+          td.textContent = col.replace(/"/g, '');
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+    });
+
+    // 表初期化 + フィルター追加
+    const table = $('#myTable').DataTable({
+      pageLength: 25,
+      order: [],
+      language: {
+        url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/ja.json"
+      },
+      initComplete: function () {
+        this.api().columns().every(function () {
+          const column = this;
+          const select = $('<select><option value="">すべて</option></select>')
+            .appendTo($(column.footer()).empty())
+            .on('change', function () {
+              const val = $.fn.dataTable.util.escapeRegex($(this).val());
+              column.search(val ? '^' + val + '$' : '', true, false).draw();
             });
-            tbody.appendChild(tr);
-          }
-        });
 
-        // 表をDataTablesで初期化
-        $('#myTable').DataTable({
-          pageLength: 25,
-          order: [],
-          language: {
-            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/ja.json"
-          }
+          column.data().unique().sort().each(function (d) {
+            select.append('<option value="' + d + '">' + d + '</option>');
+          });
         });
-      });
-  </script>
+      }
+    });
+  });
+</script>
 
 </body>
 </html>
