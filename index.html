@@ -1,11 +1,64 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>衆参5アニマル占い</title>
+  <meta charset="UTF-8">
+  <title>衆議院議員リスト</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
 </head>
 <body>
-  <h1>衆議院・参議院メンバー × 5アニマル占い</h1>
-  <p>これはサンプルページです。</p>
+  <h1>衆議院議員リスト</h1>
+  <div id="table-container">読み込み中...</div>
+
+  <script>
+    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1giM0QVguQyfZuo0KA4cJX2xV2QyFjBHNNRgFbX7DdsPqh4ADmRcEM6BaZHgmhk08JG5UeByIloJo/pub?output=csv&gid=0";
+
+    fetch(sheetURL)
+      .then(response => response.text())
+      .then(csvText => {
+        const rows = csvText.trim().split("\n").map(row => row.split(","));
+        const header = rows[0];
+        const data = rows.slice(1);
+
+        const table = document.createElement("table");
+        const thead = table.createTHead();
+        const headerRow = thead.insertRow();
+        header.forEach(col => {
+          const th = document.createElement("th");
+          th.textContent = col;
+          headerRow.appendChild(th);
+        });
+
+        const tbody = table.createTBody();
+        data.forEach(row => {
+          const tr = tbody.insertRow();
+          row.forEach(cell => {
+            const td = tr.insertCell();
+            td.textContent = cell;
+          });
+        });
+
+        const container = document.getElementById("table-container");
+        container.innerHTML = "";  // 「読み込み中...」を消す
+        container.appendChild(table);
+      })
+      .catch(error => {
+        document.getElementById("table-container").innerText = "データの取得に失敗しました。";
+        console.error(error);
+      });
+  </script>
 </body>
 </html>
