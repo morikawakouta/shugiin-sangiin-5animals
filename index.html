@@ -1,109 +1,79 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>衆議院 5アニマル</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  <meta charset="UTF-8" />
+  <title>議員リスト（フィルター付き）</title>
   <!-- DataTables CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
+    .filters {
+      margin-bottom: 10px;
     }
-    table {
-      width: 100%;
-    }
-    tfoot select {
-      width: 100%;
+    .filters label {
+      margin-right: 20px;
     }
   </style>
 </head>
 <body>
+  <h1>議員リスト</h1>
 
-<h1>衆議院 5アニマル議員一覧</h1>
+  <div class="filters" id="filter-area"></div>
 
-<table id="myTable" class="display">
-  <thead>
-    <tr>
-      <th>氏名</th>
-      <th>政党</th>
-      <th>生年月日</th>
-      <th>表面</th>
-      <th>本質</th>
-      <th>意思決定</th>
-      <th>隠れ</th>
-      <th>希望</th>
-    </tr>
-  </thead>
-  <tfoot>
-    <tr>
-      <th>氏名</th>
-      <th>政党</th>
-      <th>生年月日</th>
-      <th>表面</th>
-      <th>本質</th>
-      <th>意思決定</th>
-      <th>隠れ</th>
-      <th>希望</th>
-    </tr>
-  </tfoot>
-  <tbody id="table-body"></tbody>
-</table>
+  <table id="gijiin-table" class="display" style="width:100%">
+    <thead>
+      <tr></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-<!-- jQuery + DataTables -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <!-- jQuery & DataTables JS -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
-<script>
-const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1giM0QVguQyfZuo0KA4cJX2xV2QyFjBHNNRgFbX7DdsPqh4ADmRcEM6BaZHgmhk08JG5UeByIloJo/pub?gid=0&single=true&output=csv";
+  <script>
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1giM0QVguQyfZuo0KA4cJX2xV2QyFjBHNNRgFbX7DdsPqh4ADmRcEM6BaZHgmhk08JG5UeByIloJo/pub?gid=0&single=true&output=csv";
 
-fetch(csvUrl)
-  .then(res => res.text())
-  .then(csv => {
-    const rows = csv.split("\n").slice(1);
-    const tbody = document.getElementById("table-body");
+    // CSVを読み込んでDataTableに変換
+    async function loadCSVtoTable() {
+      const res = await fetch(SHEET_URL);
+      const text = await res.text();
+      const rows = text.trim().split("\n").map(row => row.split(","));
 
-    rows.forEach(row => {
-      const cols = row.split(",");
-      if (cols.length >= 8) {
-        const tr = document.createElement("tr");
-        cols.slice(0, 8).forEach(col => {
-          const td = document.createElement("td");
-          td.textContent = col.replace(/"/g, '');
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      }
-    });
+      const headers = rows[0];
+      const data = rows.slice(1);
 
-    // 表初期化 + フィルター追加
-    const table = $('#myTable').DataTable({
-      pageLength: 25,
-      order: [],
-      language: {
-        url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/ja.json"
-      },
-      initComplete: function () {
-        this.api().columns().every(function () {
-          const column = this;
-          const select = $('<select><option value="">すべて</option></select>')
-            .appendTo($(column.footer()).empty())
-            .on('change', function () {
+      // ヘッダーを反映
+      const thead = $("#gijiin-table thead tr");
+      headers.forEach(h => thead.append(`<th>${h}</th>`));
+
+      // DataTable 初期化
+      const table = $('#gijiin-table').DataTable({
+        data: data,
+        columns: headers.map(h => ({ title: h })),
+        paging: false, // ✅ 全件表示（ページネーションなし）
+        dom: 'lrtip',  // ✅ デフォルトの検索フォーム削除
+        initComplete: function () {
+          // フィルター作成（上部）
+          headers.forEach((title, i) => {
+            const column = this.api().column(i);
+            const select = $(`<label>${title}: <select><option value="">すべて</option></select></label>`).appendTo("#filter-area");
+
+            column.data().unique().sort().each(function (d) {
+              if (d && d !== "-") {
+                select.find("select").append(`<option value="${d}">${d}</option>`);
+              }
+            });
+
+            select.find("select").on("change", function () {
               const val = $.fn.dataTable.util.escapeRegex($(this).val());
               column.search(val ? '^' + val + '$' : '', true, false).draw();
             });
-
-          column.data().unique().sort().each(function (d) {
-            select.append('<option value="' + d + '">' + d + '</option>');
           });
-        });
-      }
-    });
-  });
-</script>
+        }
+      });
+    }
 
+    loadCSVtoTable();
+  </script>
 </body>
 </html>
