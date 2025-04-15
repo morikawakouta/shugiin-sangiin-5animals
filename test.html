@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>議員</title>
+
+  <!-- ✅ DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+
+  <!-- ✅ select2 CSS（ローカル） -->
+  <link rel="stylesheet" href="select2.min.css" />
+
+  <style>
+    .filter-select {
+      width: 100% !important;
+      font-size: 12px;
+    }
+    .select2-container {
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>議員リスト（フィルター付き）</h1>
+
+  <table id="gijiin-table" class="display" style="width:100%">
+    <thead>
+      <tr id="header-row"></tr>
+      <tr id="filter-row"></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- ✅ jQuery（一番最初に読み込む！） -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+  <!-- ✅ select2 JS（ローカル） -->
+  <script src="select2.min.js"></script>
+
+  <!-- ✅ DataTables JS（最後） -->
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+  <script>
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR1giM0QVguQyfZuo0KA4cJX2xV2QyFjBHNNRgFbX7DdsPqh4ADmRcEM6BaZHgmhk08JG5UeByIloJo/pub?gid=0&single=true&output=csv";
+
+    async function loadCSVtoTable() {
+      const res = await fetch(SHEET_URL);
+      const text = await res.text();
+      const rows = text.trim().split("\n").map(row => row.split(","));
+      const headers = rows[0];
+      const data = rows.slice(1);
+
+      const $headerRow = $('#header-row');
+      const $filterRow = $('#filter-row');
+
+      const filterTargets = ["会派", "本質", "意思決定", "表面", "隠れ", "希望"];
+      const hiddenColumns = [1, 4]; // B列とE列
+
+      headers.forEach((title, index) => {
+        $headerRow.append(`<th>${title}</th>`);
+        if (filterTargets.includes(title)) {
+          $filterRow.append(`<th><select class="filter-select" multiple data-col="${index}"></select></th>`);
+        } else {
+          $filterRow.append(`<th></th>`);
+        }
+      });
+
+      const table = $('#gijiin-table').DataTable({
+        data: data,
+        columns: headers.map(h => ({ title: h })),
+        paging: false,
+        ordering: false,
+        dom: 't',
+        initComplete: function () {
+          const api = this.api();
+
+          filterTargets.forEach((title) => {
+            const colIndex = headers.indexOf(title);
+            const column = api.column(colIndex);
+            const select = $(`select[data-col="${colIndex}"]`);
+
+            const uniqueValues = [...new Set(column.data().toArray())].filter(v => v && v !== "-");
+            uniqueValues.sort().forEach(val => {
+            select.append(`<option value="${val}" selected>${val}</option>`);
+            });
+
+            // ✅ select2 適用（setTimeoutで確実に初期化）
+            setTimeout(() => {
+            select.select2({
+                placeholder: "選択...",
+                allowClear: true,
+                width: 'resolve'
+            });
+            }, 0);
+
+            // ✅ フィルター処理
+            select.on("change", function () {
+            const selected = $(this).val();
+            const regex = selected && selected.length > 0 ? selected.join("|") : "";
+            column.search(regex, true, false).draw();
+            });
+
+          });
+
+          // 非表示列を隠す
+          hiddenColumns.forEach(idx => api.column(idx).visible(false));
+        }
+      });
+    }
+
+    loadCSVtoTable();
+  </script>
+</body>
+</html>
