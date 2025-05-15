@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import os
 import re
+# 画像を収集
+
 
 def safe_filename(name):
     name = re.sub(r'[\\/:*?"<>|]', '', name)

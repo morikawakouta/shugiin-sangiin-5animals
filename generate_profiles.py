@@ -1,6 +1,8 @@
 import pandas as pd
 import os
 import re
+# 完成シートから個人ページHTMLを生成
+
 
 def safe_filename(name):
     # Windows 禁則文字・記号・末尾「君」を除去

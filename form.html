@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>5アニマル占い（TEST）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 10px;
+    }
+  
+    img {
+      max-width: 100px;
+      height: auto;
+    }
+  
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px 0;
+    }
+  
+    .row > div {
+      text-align: center;
+      flex: 1 1 100px;
+    }
+  
+    @media (max-width: 600px) {
+      img {
+        max-width: 80px;
+      }
+      .row {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+  
+</head>
+<body>
+  <h1>動物占い</h1>
+
+  <form method="POST" novalidate>
+    <label>氏名：<input type="text" name="name" autocomplete="off"></label><br><br>
+
+    <label>生年月日：</label><br>
+    <select name="year">
+      {% for y in year_range %}
+        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}年</option>
+      {% endfor %}
+    </select>
+
+    <select name="month">
+      {% for m in month_range %}
+        <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>{{ m }}月</option>
+      {% endfor %}
+    </select>
+
+    <select name="day">
+      {% for d in day_range %}
+        <option value="{{ d }}" {% if d == selected_day %}selected{% endif %}>{{ d }}日</option>
+      {% endfor %}
+    </select>
+
+    <br><br>
+    <input type="submit" value="占う">
+  </form>
+
+  {% if result %}
+  <h2>占い結果</h2>
+  <p>{{ name }}さん　{{ selected_year }}年{{ selected_month }}月{{ selected_day }}日</p>
+
+  <!-- 表面 -->
+  <div class="row">
+    <div>
+      <div>{{ result['表面']['name'] }}</div>
+      <img src="{{ result['表面']['img'] }}">
+    </div>
+  </div>
+
+  <!-- 希望・本質・意思決定 -->
+  <div class="row">
+    <div>
+      <div>{{ result['希望']['name'] }}</div>
+      <img src="{{ result['希望']['img'] }}">
+    </div>
+    <div>
+      <div>{{ result['本質']['name'] }}</div>
+      <img src="{{ result['本質']['img'] }}">
+    </div>
+    <div>
+      <div>{{ result['意思決定']['name'] }}</div>
+      <img src="{{ result['意思決定']['img'] }}">
+    </div>
+  </div>
+
+  <!-- 隠れ -->
+  <div class="row">
+    <div>
+      <div>{{ result['隠れ']['name'] }}</div>
+      <img src="{{ result['隠れ']['img'] }}">
+    </div>
+  </div>
+{% endif %}
+
+
+</body>
+</html>

@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import os
+# プロフィール文の収集
+
 
 # 出力ファイルのパス（この.pyと同じ場所にあるCSV）
 script_dir = os.path.dirname(os.path.abspath(__file__))
